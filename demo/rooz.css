@@ -64,3 +64,97 @@
   border-color: rgba(0,0,0,.35);
   font-weight: 700;
 }
+
+/* --- Custom Dropdown --- */
+.rooz__dropdowns{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+}
+
+.roozDD{ position:relative; }
+
+.roozDD__btn{
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.10);
+  background: rgba(0,0,0,.03);
+  padding: 0 12px;
+  font: inherit;
+  font-weight: 650;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.06);
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+}
+
+.roozDD__btn::after{
+  content:"";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid rgba(0,0,0,.55);
+  border-bottom: 2px solid rgba(0,0,0,.55);
+  transform: rotate(45deg);
+  margin-inline-start: 4px;
+  opacity: .7;
+}
+
+.roozDD.is-open .roozDD__btn{
+  border-color: rgba(0,0,0,.28);
+  box-shadow: 0 0 0 4px rgba(0,0,0,.08), 0 18px 45px rgba(0,0,0,.10);
+  transform: translateY(-1px);
+}
+
+.roozDD__panel{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;              
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 30px 70px rgba(0,0,0,.14);
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.roozDD__search{
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  padding: 10px 12px;
+  outline: none;
+  background: transparent;
+  font: inherit;
+}
+
+.roozDD__list{
+  max-height: inherit;
+  overflow:auto;
+  padding: 6px;
+}
+
+.roozDD__opt{
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: start;
+  padding: 10px 10px;
+  border-radius: 12px;
+  cursor:pointer;
+  font: inherit;
+  transition: background .10s ease, transform .10s ease;
+}
+
+.roozDD__opt:hover{ background: rgba(0,0,0,.05); }
+.roozDD__opt.is-active{ background: rgba(0,0,0,.08); }
+
+.roozDD__empty{
+  padding: 14px 12px;
+  opacity: .65;
+  font-size: 13px;
+}

@@ -1,14 +1,14 @@
 export function popup(options = {}) {
   const opt = {
-    placement: "bottom-start",   // bottom-start | bottom-end | top-start | top-end
+    placement: "bottom-start", // bottom-start | bottom-end | top-start | top-end
     offset: 8,
-    portal: true,               // append to body
-    matchWidth: false,          // popup width = input width
+    portal: true, // append to body
+    matchWidth: false, // popup width = input width
     zIndex: 1000,
     closeOnSelect: true,
     closeOnEsc: true,
     closeOnOutsideClick: true,
-    flip: true,                
+    flip: true,
     ...options,
   };
 
@@ -32,7 +32,6 @@ export function popup(options = {}) {
         dp.root.classList.add("rooz--portal");
       }
 
-      // استایل پایه برای پاپ‌آپ
       dp.root.style.position = "absolute";
       dp.root.style.top = "0px";
       dp.root.style.left = "0px";
@@ -40,7 +39,6 @@ export function popup(options = {}) {
       dp.root.style.display = "none";
 
       function getDir() {
-        // اول dir خود input، بعد document
         const elDir = dp.target.getAttribute("dir");
         if (elDir) return elDir.toLowerCase();
         const cs = win.getComputedStyle(dp.target);
@@ -79,9 +77,17 @@ export function popup(options = {}) {
         const spaceBelow = win.innerHeight - inputRect.bottom;
         const spaceAbove = inputRect.top;
 
-        if (side === "bottom" && spaceBelow < popupSize.h + opt.offset && spaceAbove > spaceBelow) {
+        if (
+          side === "bottom" &&
+          spaceBelow < popupSize.h + opt.offset &&
+          spaceAbove > spaceBelow
+        ) {
           placement = `top-${align}`;
-        } else if (side === "top" && spaceAbove < popupSize.h + opt.offset && spaceBelow > spaceAbove) {
+        } else if (
+          side === "top" &&
+          spaceAbove < popupSize.h + opt.offset &&
+          spaceBelow > spaceAbove
+        ) {
           placement = `bottom-${align}`;
         }
 
@@ -91,26 +97,28 @@ export function popup(options = {}) {
       function computePosition() {
         const inputRect = dp.target.getBoundingClientRect();
         const dir = getDir();
+
+        // ✅ اول عرض رو ست کن
+        if (opt.matchWidth) {
+            dp.root.style.width = `${inputRect.width}px`;
+        } else {
+            dp.root.style.width = "";
+        }
+
+        // ✅ بعد اندازه بگیر (حالا اندازه واقعی و نهایی است)
         const popupSize = measurePopup();
+
         const placement = choosePlacement(inputRect, popupSize);
         lastPlacement = placement;
 
         const { side, align } = parsePlacement(placement);
-
-        // matchWidth
-        if (opt.matchWidth) {
-          dp.root.style.width = `${inputRect.width}px`;
-        } else {
-          dp.root.style.width = ""; 
-        }
-
         const isRTL = dir === "rtl";
 
         let x;
         if (align === "start") {
-          x = isRTL ? (inputRect.right - popupSize.w) : inputRect.left;
+            x = isRTL ? (inputRect.right - popupSize.w) : inputRect.left;
         } else {
-          x = isRTL ? inputRect.left : (inputRect.right - popupSize.w);
+            x = isRTL ? inputRect.left : (inputRect.right - popupSize.w);
         }
 
         let y;
@@ -135,7 +143,8 @@ export function popup(options = {}) {
 
         dp.root.style.left = `${left}px`;
         dp.root.style.top = `${top}px`;
-      }
+    }
+
 
       function schedulePositionUpdate() {
         if (!isOpen) return;
@@ -155,7 +164,9 @@ export function popup(options = {}) {
         computePosition();
         dp.root.style.visibility = "visible";
 
-        dp.root.dispatchEvent(new CustomEvent("rooz:open", { detail: { placement: lastPlacement } }));
+        dp.root.dispatchEvent(
+          new CustomEvent("rooz:open", { detail: { placement: lastPlacement } })
+        );
       }
 
       function close() {
@@ -180,9 +191,25 @@ export function popup(options = {}) {
 
       const onDocPointerDown = (e) => {
         if (!opt.closeOnOutsideClick) return;
+
         const t = e.target;
+
+        // instance id را تضمین کن
+        const id =
+          dp._roozInstanceId ||
+          dp.root.dataset.roozInstance ||
+          (dp._roozInstanceId =
+            globalThis.crypto?.randomUUID?.() ??
+            `rooz_${Math.random().toString(16).slice(2)}_${Date.now()}`);
+
+        dp.root.dataset.roozInstance = id;
+
+        if (t.closest?.(`[data-rooz-instance="${id}"]`)) return;
+
         if (t === dp.target) return;
+
         if (dp.root.contains(t)) return;
+
         close();
       };
 
@@ -209,7 +236,10 @@ export function popup(options = {}) {
       doc.addEventListener("keydown", onKeyDown, true);
 
       win.addEventListener("resize", onResize, { passive: true });
-      win.addEventListener("scroll", onScroll, { passive: true, capture: true });
+      win.addEventListener("scroll", onScroll, {
+        passive: true,
+        capture: true,
+      });
 
       // اولین رندر
       dp.render();

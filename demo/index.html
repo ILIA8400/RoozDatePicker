@@ -33,7 +33,11 @@
         matchWidth: true,          
         closeOnSelect: true,
     }))
-    .use(uiBasic());
+    .use(uiBasic({
+        headerDropdown: 'custom', // false, 'custom'
+        yearRange: 5,     // مثلا 5 سال عقب/جلو
+        yearSearch: false,
+    }));
 
     dp.on("change", (payload) => {
         console.log(payload.iso, payload.jalali, payload.gregorian);
