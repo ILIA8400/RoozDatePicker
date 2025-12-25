@@ -378,6 +378,7 @@ export function uiBasic(options = {}) {
 
       const unsubscribeChange = dp.on("change", (payload) => {
         if (!dp.isBoundToInput) return;
+        if (dp.formatValue) return;
 
         const pad2 = (n) => String(n).padStart(2, "0");
 
@@ -404,7 +405,6 @@ export function uiBasic(options = {}) {
             monthDD?.setLabel(monthName);
             yearDD?.setLabel(yearText);
 
-            // MVP: ساده ولی مطمئن
             monthDD?.rebuild();
             yearDD?.rebuild();
           } else {
