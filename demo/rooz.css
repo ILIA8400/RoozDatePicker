@@ -1,0 +1,66 @@
+.rooz {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 12px;
+  padding: 12px;
+  width: 280px;
+  user-select: none;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+
+.rooz__header {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.rooz__btn {
+  height: 32px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.rooz__title {
+  text-align: center;
+  font-weight: 600;
+}
+
+.rooz__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+  opacity: .75;
+  font-size: 12px;
+  text-align: center;
+}
+
+.rooz__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.rooz__cell {
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.10);
+  background: #fff;
+  cursor: pointer;
+}
+
+.rooz__cell--empty {
+  border-color: transparent;
+  background: transparent;
+  cursor: default;
+}
+
+.rooz__cell.is-selected {
+  border-color: rgba(0,0,0,.35);
+  font-weight: 700;
+}

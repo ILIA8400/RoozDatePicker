@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./rooz.css" />
+  <title>rooz demo</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/jalaali-js/dist/jalaali.min.js"></script>
+</head>
+<body style="padding:24px; display:grid; gap:16px; max-width:520px;">
+  <label>
+    تاریخ (شمسی):
+    <input id="myInput" placeholder="1404/10/04" style="width:280px; padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,.2);" />
+  </label>
+
+  <div id="inline"></div>
+
+  <script type="module">
+    import { RoozDatepicker } from "../src/core/rooz.js";
+    import { uiBasic } from "../src/plugins/ui-basic.js";
+    import { popup } from "../src/plugins/popup.js";
+
+    const dp = new RoozDatepicker("#myInput", {
+    calendar: "jalali", // gregorian, jalali
+    locale: "fa", // en, fa
+    digits: 'persian',
+    })
+    .use(popup({
+        placement: "bottom-start", 
+        offset: 8,
+        portal: true,
+        matchWidth: true,          
+        closeOnSelect: true,
+    }))
+    .use(uiBasic());
+
+    dp.on("change", (payload) => {
+        console.log(payload.iso, payload.jalali, payload.gregorian);
+    });
+
+    document.querySelector("#openBtn")?.addEventListener("click", () => dp.open());
+  </script>
+</body>
+</html>
