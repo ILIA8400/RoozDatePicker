@@ -17,6 +17,14 @@ export function popup(options = {}) {
     install(dp) {
       if (!dp.isBoundToInput) return;
 
+      const instanceId =
+        dp._roozInstanceId ||
+        (dp._roozInstanceId =
+          globalThis.crypto?.randomUUID?.() ??
+          `rooz_${Math.random().toString(16).slice(2)}_${Date.now()}`);
+
+      dp.root.dataset.roozInstance = instanceId;
+
       let isOpen = false;
       let lastPlacement = opt.placement;
       let rafId = null;
@@ -68,7 +76,6 @@ export function popup(options = {}) {
       }
 
       function choosePlacement(inputRect, popupSize) {
-        // flip عمودی
         let placement = opt.placement;
         if (!opt.flip) return placement;
 
@@ -98,14 +105,12 @@ export function popup(options = {}) {
         const inputRect = dp.target.getBoundingClientRect();
         const dir = getDir();
 
-        // ✅ اول عرض رو ست کن
         if (opt.matchWidth) {
-            dp.root.style.width = `${inputRect.width}px`;
+          dp.root.style.width = `${inputRect.width}px`;
         } else {
-            dp.root.style.width = "";
+          dp.root.style.width = "";
         }
 
-        // ✅ بعد اندازه بگیر (حالا اندازه واقعی و نهایی است)
         const popupSize = measurePopup();
 
         const placement = choosePlacement(inputRect, popupSize);
@@ -116,9 +121,9 @@ export function popup(options = {}) {
 
         let x;
         if (align === "start") {
-            x = isRTL ? (inputRect.right - popupSize.w) : inputRect.left;
+          x = isRTL ? inputRect.right - popupSize.w : inputRect.left;
         } else {
-            x = isRTL ? inputRect.left : (inputRect.right - popupSize.w);
+          x = isRTL ? inputRect.left : inputRect.right - popupSize.w;
         }
 
         let y;
@@ -143,8 +148,7 @@ export function popup(options = {}) {
 
         dp.root.style.left = `${left}px`;
         dp.root.style.top = `${top}px`;
-    }
-
+      }
 
       function schedulePositionUpdate() {
         if (!isOpen) return;
@@ -192,23 +196,17 @@ export function popup(options = {}) {
       const onDocPointerDown = (e) => {
         if (!opt.closeOnOutsideClick) return;
 
+        const path = e.composedPath?.() || [];
         const t = e.target;
 
-        // instance id را تضمین کن
-        const id =
-          dp._roozInstanceId ||
-          dp.root.dataset.roozInstance ||
-          (dp._roozInstanceId =
-            globalThis.crypto?.randomUUID?.() ??
-            `rooz_${Math.random().toString(16).slice(2)}_${Date.now()}`);
+        if (path.includes(dp.target) || t === dp.target) return;
 
-        dp.root.dataset.roozInstance = id;
+        if (path.includes(dp.root) || dp.root.contains(t)) return;
 
-        if (t.closest?.(`[data-rooz-instance="${id}"]`)) return;
-
-        if (t === dp.target) return;
-
-        if (dp.root.contains(t)) return;
+        const hitSameInstance = path.some(
+          (node) => node?.dataset?.roozInstance === instanceId
+        );
+        if (hitSameInstance) return;
 
         close();
       };
@@ -241,7 +239,6 @@ export function popup(options = {}) {
         capture: true,
       });
 
-      // اولین رندر
       dp.render();
 
       return () => {

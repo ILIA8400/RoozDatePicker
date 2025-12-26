@@ -6,44 +6,206 @@
   <link rel="stylesheet" href="./rooz.css" />
   <title>rooz demo</title>
 
+  <!-- Required for Jalali -->
   <script src="https://cdn.jsdelivr.net/npm/jalaali-js/dist/jalaali.min.js"></script>
-</head>
-<body style="padding:24px; display:grid; gap:16px; max-width:520px;">
-  <label>
-    تاریخ (شمسی):
-    <input id="myInput" placeholder="1404/10/04" style="width:280px; padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,.2);" />
-  </label>
 
-  <div id="inline"></div>
+  <style>
+    *{
+      font-family: vazir;
+    }
+    body { padding:24px; display:grid; gap:16px; max-width:720px; }
+    label { display:flex; gap:12px; align-items:center; justify-content:space-between; }
+    input { width:280px; padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,.2); }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .card { padding:14px; border:1px solid rgba(0,0,0,.08); border-radius:14px; background: rgba(0,0,0,.02); }
+    button {
+      padding:8px 12px; border-radius:10px; border:1px solid rgba(0,0,0,.14);
+      background:#fff; cursor:pointer;
+    }
+    button:active { transform: translateY(1px); }
+    small { opacity:.75 }
+    code { background: rgba(0,0,0,.06); padding:2px 6px; border-radius:8px; }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <strong>Input #1 (Jalali)</strong><br/>
+        <small>format + parse + constraints + popup + dropdown header</small>
+      </div>
+      <div class="row">
+        <button id="btnOpen1" type="button">Open</button>
+        <button id="btnClose1" type="button">Close</button>
+        <button id="btnToday1" type="button">Today</button>
+        <button id="btnClear1" type="button">Clear</button>
+        <button id="btnToggleCal1" type="button">Toggle Calendar</button>
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+
+    <label>
+      تاریخ (شمسی):
+      <input id="myInput" placeholder="1404/10/04" inputmode="numeric" />
+    </label>
+
+    <div style="height:8px"></div>
+    <small>
+      - تایپ دستی پشتیبانی می‌شود (با <code>parse</code>)<br/>
+      - خروجی input با <code>format: YYYY/MM/DD</code> تنظیم شده<br/>
+      - جمعه‌ها disable هستند + min/max اعمال شده
+    </small>
+  </div>
+
+  <div class="card">
+    <div>
+      <strong>Input #2 (Gregorian)</strong><br/>
+      <small>برای تست چند instance + digits latin</small>
+    </div>
+    <div style="height:10px"></div>
+
+    <label>
+      Date (Gregorian):
+      <input id="myInput2" placeholder="2025-01-20" inputmode="numeric" />
+    </label>
+
+    <div style="height:8px"></div>
+    <div class="row">
+      <button id="btnToggleDigits2" type="button">Toggle Digits</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div>
+      <strong>Inline calendar</strong><br/>
+      <small>بدون popup، مستقیم داخل صفحه</small>
+    </div>
+    <div style="height:10px"></div>
+    <div id="inline"></div>
+  </div>
 
   <script type="module">
     import { RoozDatepicker } from "../src/core/rooz.js";
     import { uiBasic } from "../src/plugins/ui-basic.js";
     import { popup } from "../src/plugins/popup.js";
 
-    const dp = new RoozDatepicker("#myInput", {
-    calendar: "jalali", // gregorian, jalali
-    locale: "fa", // en, fa
-    digits: 'persian',
+    // NEW plugins you added
+    import { format } from "../src/plugins/format.js";
+    import { parse } from "../src/plugins/parse.js";
+    import { constraints } from "../src/plugins/constraints.js";
+
+    // ---------- Instance #1 (Jalali) ----------
+    const dp1 = new RoozDatepicker("#myInput", {
+      calendar: "jalali",
+      locale: "fa",
+      digits: "persian",
     })
-    .use(popup({
-        placement: "bottom-start", 
+      .use(popup({
+        placement: "bottom-start",
         offset: 8,
         portal: true,
-        matchWidth: true,          
+        matchWidth: true,
         closeOnSelect: true,
-    }))
-    .use(uiBasic({
-        headerDropdown: 'custom', // false, 'custom'
-        yearRange: 5,     // مثلا 5 سال عقب/جلو
-        yearSearch: false,
-    }));
+      }))
+      .use(format({
+        pattern: "YYYY/MM/DD",
+        calendar: "auto",
+        writeToInput: true,
+      }))
+      .use(parse({
+        pattern: "YYYY/MM/DD",
+        calendar: "auto",
+        updateOn: "blur", // "input" | "change" | "blur"
+        strict: false,
+        onInvalid: (v) => console.warn("invalid input:", v),
+      }))
+      .use(constraints({
+        // min/max را به صورت Gregorian ISO می‌گیریم (تاریخ مطلق)
+        min: "2025-01-01",
+        max: "2026-12-31",
+        // جمعه‌ها (Friday) غیرقابل انتخاب
+        isDisabled: ({ date }) => date.getDay() === 5,
+      }))
+      .use(uiBasic({
+        headerDropdown: "custom",
+        yearRange: 10,
+        yearSearch: true,
+      }));
 
-    dp.on("change", (payload) => {
-        console.log(payload.iso, payload.jalali, payload.gregorian);
+    dp1.on("change", (p) => {
+      console.log("[dp1] change:", p.iso, p.jalali, p.gregorian);
     });
 
-    document.querySelector("#openBtn")?.addEventListener("click", () => dp.open());
+    // Buttons
+    document.querySelector("#btnOpen1").addEventListener("click", () => dp1.open?.());
+    document.querySelector("#btnClose1").addEventListener("click", () => dp1.close?.());
+
+    document.querySelector("#btnClear1").addEventListener("click", () => {
+      // MVP: ساده‌ترین clear
+      dp1.target.value = "";
+      // اگر خواستی state هم پاک شه، بعداً یک API مثل dp.clear() اضافه می‌کنیم
+      dp1.close?.();
+    });
+
+    document.querySelector("#btnToday1").addEventListener("click", () => {
+      const now = new Date();
+      // امروز را در تقویم فعلی dp1 انتخاب کن
+      if (dp1.state.calendar === "gregorian") {
+        const y = now.getFullYear();
+        const m = now.getMonth() + 1;
+        const d = now.getDate();
+        dp1.setView(y, m);
+        dp1.selectDay(d);
+      } else {
+        const j = window.jalaali;
+        const p = j.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        dp1.setView(p.jy, p.jm);
+        dp1.selectDay(p.jd);
+      }
+      dp1.open?.();
+    });
+
+    document.querySelector("#btnToggleCal1").addEventListener("click", () => {
+      dp1.setCalendar(dp1.state.calendar === "jalali" ? "gregorian" : "jalali");
+      dp1.render();
+      dp1.open?.();
+    });
+
+    // ---------- Instance #2 (Gregorian) ----------
+    let digits2 = "latin";
+    const dp2 = new RoozDatepicker("#myInput2", {
+      calendar: "gregorian",
+      locale: "en",
+      digits: digits2,
+    })
+      .use(popup({ matchWidth: true, placement: "bottom-start" }))
+      .use(format({ pattern: "YYYY-MM-DD", calendar: "gregorian" }))
+      .use(parse({ pattern: "YYYY-MM-DD", calendar: "gregorian", updateOn: "blur" }))
+      .use(uiBasic({ headerDropdown: "custom", yearRange: 30, yearSearch: true }));
+
+    dp2.on("change", (p) => console.log("[dp2] change:", p.iso));
+
+    document.querySelector("#btnToggleDigits2").addEventListener("click", () => {
+      digits2 = digits2 === "latin" ? "persian" : "latin";
+      dp2.options.digits = digits2;
+      dp2.render();
+    });
+
+    // ---------- Inline ----------
+    const dpInline = new RoozDatepicker("#inline", {
+      calendar: "jalali",
+      locale: "fa",
+      digits: "persian",
+    })
+      .use(constraints({
+        isDisabled: ({ date }) => date.getDay() === 5, // Friday disabled
+      }))
+      .use(uiBasic({ headerDropdown: "custom", yearRange: 5, yearSearch: false }));
+
+    dpInline.on("change", (p) => console.log("[inline] change:", p.iso));
   </script>
 </body>
 </html>

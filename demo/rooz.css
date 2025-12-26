@@ -1,13 +1,25 @@
+/* =========================
+   Rooz Datepicker 
+   ========================= */
+
+.rooz,
+.rooz * {
+  box-sizing: border-box;
+}
+
 .rooz {
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  border: 1px solid rgba(0,0,0,.12);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 12px;
   padding: 12px;
   width: 280px;
+  min-width: 325px; 
   user-select: none;
   background: #fff;
-  box-shadow: 0 10px 30px rgba(0,0,0,.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
+
+/* ---------- Header ---------- */
 
 .rooz__header {
   display: grid;
@@ -17,9 +29,13 @@
   margin-bottom: 10px;
 }
 
+.rooz__header > * {
+  min-width: 0;
+}
+
 .rooz__btn {
   height: 32px;
-  border: 1px solid rgba(0,0,0,.12);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   background: transparent;
   border-radius: 10px;
   cursor: pointer;
@@ -30,28 +46,46 @@
   font-weight: 600;
 }
 
+/* ---------- Weekdays + Grid ---------- */
+
 .rooz__weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
   margin-bottom: 6px;
-  opacity: .75;
+  opacity: 0.75;
   font-size: 12px;
   text-align: center;
 }
 
+.rooz__weekday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
 .rooz__grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
 }
 
 .rooz__cell {
   height: 34px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+
   border-radius: 10px;
-  border: 1px solid rgba(0,0,0,.10);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   background: #fff;
   cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .rooz__cell--empty {
@@ -61,58 +95,79 @@
 }
 
 .rooz__cell.is-selected {
-  border-color: rgba(0,0,0,.35);
+  border-color: rgba(0, 0, 0, 0.35);
   font-weight: 700;
 }
 
-/* --- Custom Dropdown --- */
-.rooz__dropdowns{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  justify-content:center;
+.rooz__cell.is-disabled {
+  opacity: 0.35;
+  cursor: auto;
+  box-shadow: none;
 }
 
-.roozDD{ position:relative; }
+/* ---------- Custom Dropdown (Header) ---------- */
 
-.roozDD__btn{
+.rooz__dropdowns {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.roozDD {
+  position: relative;
+}
+
+.roozDD__btn {
   height: 34px;
   border-radius: 999px;
-  border: 1px solid rgba(0,0,0,.10);
-  background: rgba(0,0,0,.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.03);
   padding: 0 12px;
+
   font: inherit;
   font-weight: 650;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  gap:10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.06);
-  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
 
-.roozDD__btn::after{
-  content:"";
+.roozDD__btn::after {
+  content: "";
   width: 8px;
   height: 8px;
-  border-right: 2px solid rgba(0,0,0,.55);
-  border-bottom: 2px solid rgba(0,0,0,.55);
+  border-right: 2px solid rgba(0, 0, 0, 0.55);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.55);
   transform: rotate(45deg);
   margin-inline-start: 4px;
-  opacity: .7;
+  opacity: 0.7;
 }
 
-.roozDD.is-open .roozDD__btn{
-  border-color: rgba(0,0,0,.28);
-  box-shadow: 0 0 0 4px rgba(0,0,0,.08), 0 18px 45px rgba(0,0,0,.10);
+.roozDD.is-open .roozDD__btn {
+  border-color: rgba(0, 0, 0, 0.28);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.08), 0 18px 45px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
 }
+
+/* ---------- Dropdown Panel ---------- */
 
 .roozDD__panel{
   position: fixed;
   top: 0;
   left: 0;
-  width: 240px;              
+  width: 240px;
   border-radius: 16px;
   border: 1px solid rgba(0,0,0,.10);
   background: rgba(255,255,255,.95);
@@ -122,10 +177,10 @@
   z-index: 9999;
 }
 
-.roozDD__search{
+.roozDD__search {
   width: 100%;
   border: 0;
-  border-bottom: 1px solid rgba(0,0,0,.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   padding: 10px 12px;
   outline: none;
   background: transparent;
@@ -133,28 +188,63 @@
 }
 
 .roozDD__list{
-  max-height: inherit;
-  overflow:auto;
+  overflow: auto;
+
   padding: 6px;
+  padding-bottom: 14px;    
+
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,.25) transparent;
 }
 
-.roozDD__opt{
+/* Webkit */
+.roozDD__list::-webkit-scrollbar{ width: 6px; }
+.roozDD__list::-webkit-scrollbar-track{ background: transparent; }
+.roozDD__list::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,.18);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.roozDD__list::-webkit-scrollbar-thumb:hover{
+  background: rgba(0,0,0,.28);
+  background-clip: content-box;
+}
+
+.roozDD__opt:last-child{ margin-bottom: 6px; }
+
+.roozDD__opt {
   width: 100%;
   border: 0;
   background: transparent;
   text-align: start;
+
   padding: 10px 10px;
   border-radius: 12px;
-  cursor:pointer;
+  cursor: pointer;
   font: inherit;
-  transition: background .10s ease, transform .10s ease;
+
+  transition: background 0.1s ease, transform 0.1s ease;
 }
 
-.roozDD__opt:hover{ background: rgba(0,0,0,.05); }
-.roozDD__opt.is-active{ background: rgba(0,0,0,.08); }
+.roozDD__opt:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
 
-.roozDD__empty{
+.roozDD__opt.is-active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.roozDD__opt:last-child {
+  margin-bottom: 6px;
+}
+
+.roozDD__empty {
   padding: 14px 12px;
-  opacity: .65;
+  opacity: 0.65;
   font-size: 13px;
 }

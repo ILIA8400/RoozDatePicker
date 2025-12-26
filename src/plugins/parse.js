@@ -78,8 +78,28 @@ export function parse(options = {}) {
         dp.selectDay(parts.d);
       }
 
-      function handle() {
+      // If updateOn="blur", clicking inside the popup would blur the input.
+      // We must ignore that blur, otherwise we would re-parse and emit "change",
+      // which closes the popup (closeOnSelect) and breaks interaction.
+      let lastPointerDownWasInside = false;
+      const onDocPointerDown = (e) => {
+        const t = e.target;
+        const id = dp._roozInstanceId || dp.root?.dataset?.roozInstance;
+        lastPointerDownWasInside = !!(
+          dp.root?.contains?.(t) ||
+          (id && t?.closest?.(`[data-rooz-instance="${id}"]`))
+        );
+      };
+      dp.root.ownerDocument.addEventListener("pointerdown", onDocPointerDown, true);
+
+      function handle(e) {
         if (dp._roozSettingInputValue) return; 
+
+        if (opt.updateOn === "blur" && e?.type === "blur" && lastPointerDownWasInside) {
+          // reset for next blur
+          lastPointerDownWasInside = false;
+          return;
+        }
 
         const raw = (dp.target.value ?? "").trim();
         if (!raw) {
@@ -130,6 +150,7 @@ export function parse(options = {}) {
       return () => {
         dp.target.removeEventListener(evt, handle);
         dp.target.removeEventListener("keydown", onKeyDown);
+        dp.root.ownerDocument.removeEventListener("pointerdown", onDocPointerDown, true);
       };
     },
   };

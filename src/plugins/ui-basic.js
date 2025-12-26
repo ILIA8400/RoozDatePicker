@@ -4,6 +4,12 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
+function toLatinDigits(str) {
+  return String(str)
+    .replace(/[۰-۹]/g, (d) => "0123456789"["۰۱۲۳۴۵۶۷۸۹".indexOf(d)])
+    .replace(/[٠-٩]/g, (d) => "0123456789"["٠١٢٣٤٥٦٧٨٩".indexOf(d)]);
+}
+
 function makeDropdown({
   instanceId,
   label = "",
@@ -32,7 +38,7 @@ function makeDropdown({
   );
 
   const panel = el("div", { class: "roozDD__panel", role: "listbox" });
-  panel.dataset.roozInstance = instanceId; 
+  panel.dataset.roozInstance = instanceId;
   panel.style.maxHeight = `${maxHeight}px`;
   panel.style.display = "none";
 
@@ -52,46 +58,69 @@ function makeDropdown({
   wrap.append(btn);
   document.body.append(panel);
 
+  // Important: panel is portaled to <body>. Prevent clicks inside the dropdown
+  // from bubbling to the document outside-click handler of the popup plugin.
+  panel.addEventListener("pointerdown", (e) => e.stopPropagation());
+
   function measurePanel() {
     const prevDisp = panel.style.display;
     const prevVis = panel.style.visibility;
 
     panel.style.visibility = "hidden";
     panel.style.display = "block";
+
+    // ارتفاع واقعی محتوا (با در نظر گرفتن maxHeight)
+    const maxH = Number.parseFloat(panel.style.maxHeight) || maxHeight;
+    const h = Math.min(panel.scrollHeight, maxH);
+
+    // عرض هم از rect بگیر (اوکیه)
     const r = panel.getBoundingClientRect();
+
     panel.style.display = prevDisp;
     panel.style.visibility = prevVis;
 
-    return { w: r.width, h: r.height };
+    return { w: r.width, h };
   }
+
+  function syncListMaxHeight(panelMaxH) {
+    const searchH = searchable ? search.getBoundingClientRect().height : 0;
+    const listMax = Math.max(120, panelMaxH - searchH);
+    list.style.maxHeight = `${listMax}px`;
+  }
+
 
   function positionPanel() {
-    const rect = btn.getBoundingClientRect();
-    const gap = 8;
-    const pad = 8;
+  const rect = btn.getBoundingClientRect();
+  const gap = 8;
+  const pad = 8;
 
-    const desiredW = 240;
-    const maxW = window.innerWidth - pad * 2;
-    const w = Math.min(desiredW, maxW);
-    panel.style.width = `${w}px`;
+  const desiredW = 240;
+  const maxW = window.innerWidth - pad * 2;
+  const w = Math.min(desiredW, maxW);
+  panel.style.width = `${w}px`;
 
-    const { h } = measurePanel();
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
 
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    const openDown = spaceBelow >= h + gap || spaceBelow >= spaceAbove;
+  const avail = Math.max(160, Math.max(spaceBelow, spaceAbove) - gap - pad);
+  const panelMaxH = Math.min(maxHeight, avail);
+  panel.style.maxHeight = `${panelMaxH}px`;
 
-    let top = openDown ? rect.bottom + gap : rect.top - h - gap;
+  syncListMaxHeight(panelMaxH);
 
-    const isRTL = dir === "rtl";
-    let left = isRTL ? rect.right - w : rect.left;
+  const { h } = measurePanel();
+  const openDown = spaceBelow >= h + gap || spaceBelow >= spaceAbove;
+  let top = openDown ? rect.bottom + gap : rect.top - h - gap;
 
-    left = clamp(left, pad, window.innerWidth - w - pad);
-    top = clamp(top, pad, window.innerHeight - h - pad);
+  const isRTL = dir === "rtl";
+  let left = isRTL ? rect.right - w : rect.left;
 
-    panel.style.left = `${left}px`;
-    panel.style.top = `${top}px`;
-  }
+  left = clamp(left, pad, window.innerWidth - w - pad);
+  top = clamp(top, pad, window.innerHeight - h - pad);
+
+  panel.style.left = `${left}px`;
+  panel.style.top = `${top}px`;
+}
 
   function setLabel(text) {
     btn.childNodes[0].textContent = text;
@@ -145,10 +174,14 @@ function makeDropdown({
   }
 
   function rebuild() {
-    items = (getItems?.() || []).map((x) => ({
-      value: x.value,
-      label: String(x.label),
-    }));
+    items = (getItems?.() || []).map((x) => {
+      const label = String(x.label);
+      return {
+        value: x.value,
+        label,
+        _key: toLatinDigits(label).toLowerCase(),
+      };
+    });
     filtered = items;
     renderOptions();
   }
@@ -162,6 +195,7 @@ function makeDropdown({
       rebuild();
       panel.style.visibility = "hidden";
       panel.style.display = "block";
+      syncListMaxHeight(maxHeight);
       positionPanel();
       panel.style.visibility = "visible";
 
@@ -235,17 +269,17 @@ function makeDropdown({
   document.addEventListener("keydown", onKeyDown, true);
 
   if (searchable) {
+
     search.addEventListener("input", () => {
-      const q = search.value.trim().toLowerCase();
-      filtered = !q
-        ? items
-        : items.filter((it) => it.label.toLowerCase().includes(q));
+      const q = toLatinDigits(search.value.trim()).toLowerCase();
+      filtered = !q ? items : items.filter((it) => it._key.includes(q));
       renderOptions();
 
       activeIndex = filtered.length ? 0 : -1;
       const first = list.querySelector(".roozDD__opt");
       if (first) first.classList.add("is-active");
     });
+
 
     search.addEventListener("keydown", (e) => {
       if (e.key === "ArrowDown") {
@@ -452,17 +486,30 @@ export function uiBasic(options = {}) {
               ? dp.formatDigits(day)
               : String(day);
 
+            const isDisabled =
+              dp.isDisabledDay?.(
+                state.viewYear,
+                state.viewMonth,
+                day,
+                state.calendar
+              ) ?? false;
+
             const cell = el(
               "button",
               {
-                class: `rooz__cell ${isSelected ? "is-selected" : ""}`.trim(),
+                class: `rooz__cell ${isSelected ? "is-selected" : ""} ${
+                  isDisabled ? "is-disabled" : ""
+                }`.trim(),
                 type: "button",
                 "data-day": day,
+                disabled: isDisabled,
               },
               [document.createTextNode(dayText)]
             );
 
-            cell.addEventListener("click", () => dp.selectDay(day));
+            if (!isDisabled) {
+              cell.addEventListener("click", () => dp.selectDay(day));
+            }
             grid.append(cell);
           }
         }
