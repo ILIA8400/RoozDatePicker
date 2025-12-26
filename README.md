@@ -1,39 +1,50 @@
 # Rooz — Jalali (Persian) + Gregorian Datepicker (Plugin-based)
 
 `rooz` is a lightweight, modern **plugin-based** datepicker for the web (Vanilla JS).  
-It supports both **Jalali (Persian)** and **Gregorian** calendars.
+It supports both **Jalali (Persian)** and **Gregorian** calendars, with a small core and optional plugins.
 
-> Current status (MVP)
+> Status (MVP+)
 - Month/year navigation
-- Day selection
-- `change` event on selection
-- Input popup behavior (optional plugin)
-- Optional **custom** month/year dropdowns (nice on mobile)
-- Persian/Latin digits formatting via `digits`
+- Day selection + `change` event
+- **Popup** behavior for inputs (optional plugin)
+- **Inline** rendering (no popup)
+- Optional **custom month/year dropdown** header (mobile-friendly)
+- **Digits formatting** (`latin` / `persian` / `auto`)
+- **Format** plugin (controls input output format)
+- **Parse** plugin (typed input → sync datepicker state)
+- **Constraints** plugin (min/max + disabled dates)
+
+---
+
+## Installation
+
+Currently Rooz is shipped as source (no npm package yet).
+
+1. Clone or download the repo
+2. Serve the folder with a local dev server (ESM imports won't work reliably over `file://`)
+
+Example:
+
+```bash
+git clone <your-repo-url>
+cd RoozDatePicker
+npx serve .
+```
+
+Then open `demo/index.html`.
+
+---
+
+## Demo
+
+Open: `demo/index.html`  
+Styles: `demo/rooz.css`
+
+> Jalali support requires `jalaali-js` (load via CDN or bundle it yourself).
 
 ---
 
 ## Quick Start
-
-### 1) CSS
-Include the sample CSS (you can copy and customize it later):
-
-```html
-<link rel="stylesheet" href="./demo/rooz.css" />
-```
-
-### 2) Jalali dependency (required for Persian calendar)
-If you use `calendar: "jalali"`, you need `jalaali-js`. Easiest for now is CDN:
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/jalaali-js/dist/jalaali.min.js"></script>
-```
-
-> If `calendar: "jalali"` is used without `jalaali-js`, Rooz will throw an error.
-
----
-
-## Usage
 
 ### A) Bind to an input + popup
 
@@ -49,23 +60,15 @@ If you use `calendar: "jalali"`, you need `jalaali-js`. Easiest for now is CDN:
   import { popup } from "./src/plugins/popup.js";
 
   const dp = new RoozDatepicker("#date", {
-    calendar: "jalali",
-    locale: "fa",
-    digits: "persian", // "auto" | "latin" | "persian"
+    calendar: "jalali",  // "jalali" | "gregorian"
+    locale: "fa",        // "fa" | "en"
+    digits: "persian",   // "auto" | "latin" | "persian"
   })
-    .use(popup({
-      matchWidth: true,
-      placement: "bottom-start",
-      closeOnSelect: true,
-    }))
-    .use(uiBasic({
-      headerDropdown: "custom", // custom month/year dropdowns
-      yearRange: 80,
-      yearSearch: true,
-    }));
+    .use(popup({ matchWidth: true, placement: "bottom-start" }))
+    .use(uiBasic({ headerDropdown: "custom", yearRange: 10, yearSearch: true }));
 
   dp.on("change", (payload) => {
-    console.log("change:", payload);
+    console.log("change:", payload.iso, payload.jalali, payload.gregorian);
   });
 </script>
 ```
@@ -88,104 +91,180 @@ If you use `calendar: "jalali"`, you need `jalaali-js`. Easiest for now is CDN:
 
 ---
 
-## API
+## Core API
 
 ### Constructor
+
 ```js
 const dp = new RoozDatepicker(targetOrSelector, options);
 ```
 
-`targetOrSelector` can be:
-- a selector string like `"#date"`
-- or a DOM element like `document.querySelector("#date")`
-
-### Options
+**Core options**
 - `calendar`: `"jalali"` | `"gregorian"` (default: `"jalali"`)
 - `locale`: `"fa"` | `"en"` (default: `"fa"`)
 - `digits`: `"auto"` | `"latin"` | `"persian"` (default: `"auto"`)
-  - `auto`: Persian digits for `locale="fa"`, otherwise Latin digits
-- `weekStart`: number 0..6 (optional)
-- `jalaali`: inject `jalaali-js` manually (optional; MVP usually uses CDN)
+- `weekStart`: optional number `0..6` (overrides adapter default)
+- `jalaali`: optional injected jalaali instance (otherwise `globalThis.jalaali` is used)
 
 ### Methods
-- `dp.use(plugin, pluginOptions?)`
-- `dp.on(event, handler)` → returns an unsubscribe function
-- `dp.setCalendar("jalali"|"gregorian")`
-- `dp.setView(year, month)` (month: 1..12)
-- `dp.nextMonth()`
-- `dp.prevMonth()`
-- `dp.selectDay(day)`
-- `dp.render()`
+
+- `dp.use(plugin)` – install a plugin
+- `dp.on(event, handler)` – listen to events
+- `dp.render()` – trigger UI render (plugins usually call this for you)
+- `dp.setView(year, month)` – change visible month/year
+- `dp.prevMonth()` / `dp.nextMonth()`
+- `dp.setCalendar("jalali" | "gregorian")`
+- `dp.selectDay(dayNumber)`
 - `dp.destroy()`
 
-If `popup` plugin is installed:
-- `dp.open()`
-- `dp.close()`
-- `dp.toggle()`
-
 ### Events
-- `change` (most important)
-- `render`
-- `viewChange`
-- `calendarChange`
 
-### `change` payload
+#### `change`
+Triggered when a day is selected (and not blocked by constraints).
+
+Payload:
+
 ```js
-dp.on("change", (p) => {
-  // p.calendar => "jalali" | "gregorian"
-  // p.selected => { y, m, d } in the current calendar
-  // p.date => JS Date
-  // p.gregorian => { y, m, d }
-  // p.jalali => { y, m, d } or null
-  // p.iso => "YYYY-MM-DD"
-});
+{
+  calendar: "jalali" | "gregorian",
+  selected: { y, m, d },
+  date: Date,                 // JS Date (absolute)
+  gregorian: { y, m, d },
+  jalali: { y, m, d } | null,
+  iso: "YYYY-MM-DD"
+}
 ```
 
-There is also a DOM CustomEvent on `dp.root`:
+#### `render`
+Triggered when the datepicker should (re)render.
+
 ```js
-dp.root.addEventListener("rooz:change", (e) => console.log(e.detail));
+{
+  state: { ... },
+  labels: { months, weekdays, weekStart, ... },
+  grid: (number|null)[]       // month grid (null = empty cell)
+}
 ```
+
+Other internal events: `viewChange`, `calendarChange`, `init`.
 
 ---
 
 ## Plugins
 
-### 1) `uiBasic`
-Basic UI (header + day grid)
+Install plugins with:
 
 ```js
-dp.use(uiBasic());
+dp.use(popup()).use(uiBasic());
 ```
 
-#### Options
-- `headerDropdown`:
-  - `false` → simple month/year title
-  - `"custom"` → **custom** month/year dropdowns (mobile-safe, no overflow issues)
-- `yearRange`: e.g. `50` means current year ±50
-- `yearMin` / `yearMax`: fixed year range
-- `yearSearch`: enable search input in year dropdown
+Plugins are small and composable. A plugin is an object with:
+- `name`
+- `install(dp)` → returns a cleanup function
 
-Example:
+### 1) `uiBasic` (UI renderer)
+
 ```js
-dp.use(uiBasic({ headerDropdown: "custom", yearRange: 80, yearSearch: true }));
+import { uiBasic } from "./src/plugins/ui-basic.js";
+
+dp.use(uiBasic({
+  headerDropdown: false,      // false | "custom"
+  yearRange: 50,              // current year ± 50 (when yearMin/yearMax not provided)
+  yearMin: null,              // fixed min year (optional)
+  yearMax: null,              // fixed max year (optional)
+  yearSearch: true,           // search box for year dropdown (supports Persian/Arabic digits too)
+  navIcons: null,             // { prev, next } (string|Node|fn)
+}));
 ```
 
-### 2) `popup`
-For input-bound usage:
-- opens on input focus/click
-- closes on outside click / ESC
-- positions with flip + clamp
+#### Custom nav icons
 
-Example:
 ```js
-dp.use(popup({ matchWidth: true, placement: "bottom-start" }));
+dp.use(uiBasic({
+  navIcons: {
+    prev: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`,
+    next: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`
+  }
+}));
 ```
 
-> Note: `uiBasic` and `popup` cooperate using `data-rooz-instance` so clicks on dropdown panels (rendered on `document.body`) do NOT close the datepicker.
+### 2) `popup` (attach to input)
+
+```js
+import { popup } from "./src/plugins/popup.js";
+
+dp.use(popup({
+  placement: "bottom-start",  // bottom-start | bottom-end | top-start | top-end
+  offset: 8,
+  portal: true,               // move dp.root to <body>
+  matchWidth: false,          // popup width = input width
+  zIndex: 1000,
+  closeOnSelect: true,
+  closeOnEsc: true,
+  closeOnOutsideClick: true,
+  flip: true,
+}));
+```
+
+> Note: `uiBasic` and `popup` cooperate using `data-rooz-instance` so clicks on dropdown panels (rendered on `document.body`) do **not** close the datepicker.
+
+### 3) `format` (control output value)
+
+Writes formatted value to the input on selection, and exposes `dp.formatValue(payloadOrParts)`.
+
+```js
+import { format } from "./src/plugins/format.js";
+
+dp.use(format({
+  pattern: "YYYY/MM/DD",      // supports YYYY, MM, DD
+  calendar: "auto",           // "auto" | "jalali" | "gregorian"
+  digits: undefined,          // override digits mode (optional)
+  writeToInput: true,
+}));
+```
+
+### 4) `parse` (typed input → sync datepicker)
+
+Parses the input value and updates the view/selection (supports Persian/Arabic digits).
+
+```js
+import { parse } from "./src/plugins/parse.js";
+
+dp.use(parse({
+  pattern: "YYYY/MM/DD",
+  calendar: "auto",           // "auto" | "jalali" | "gregorian"
+  strict: false,              // if true: MM/DD must be 2 digits
+  updateOn: "blur",           // "blur" | "change" | "input"
+  allowEmpty: true,
+  onInvalid: (value) => console.warn("invalid:", value),
+}));
+```
+
+### 5) `constraints` (min/max + disable dates)
+
+Adds `dp.isDisabledDay(y,m,d,calendar)` and prevents selecting disabled days.
+
+```js
+import { constraints } from "./src/plugins/constraints.js";
+
+dp.use(constraints({
+  min: "2025-01-01",          // Date | "YYYY-MM-DD" | {y,m,d,calendar?}
+  max: "2026-12-31",
+  isDisabled: ({ date, iso, gregorian, jalali, calendar }) => {
+    // example: disable Fridays (JS day 5)
+    return date.getDay() === 5;
+  },
+}));
+```
 
 ---
 
 ## Multiple inputs (Multiple instances)
+
 Multiple instances are supported:
 
 ```js
@@ -198,17 +277,18 @@ const b = new RoozDatepicker("#b", { calendar: "gregorian", locale: "en" })
   .use(uiBasic({ headerDropdown: "custom" }));
 ```
 
-Typical behavior: opening the second input closes the first one (outside-click behavior), which is standard for popups.
-
 ---
 
-## Styling (important CSS classes)
+## Styling
 
-Core UI:
+Default styles are in `demo/rooz.css`.  
+Useful class hooks:
+
+Core:
 - `.rooz`
 - `.rooz__header`, `.rooz__btn`, `.rooz__title`
 - `.rooz__weekdays`, `.rooz__weekday`
-- `.rooz__grid`, `.rooz__cell`, `.rooz__cell--empty`, `.rooz__cell.is-selected`
+- `.rooz__grid`, `.rooz__cell`, `.rooz__cell--empty`, `.rooz__cell.is-selected`, `.rooz__cell.is-disabled`
 
 Custom dropdown:
 - `.rooz__dropdowns`
@@ -218,4 +298,5 @@ Custom dropdown:
 ---
 
 ## License
+
 MIT — see `LICENSE`.
