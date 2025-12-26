@@ -317,6 +317,7 @@ export function uiBasic(options = {}) {
     yearMin: null,
     yearMax: null,
     yearSearch: true,
+    navIcons: null,
     ...options,
   };
 
@@ -325,13 +326,41 @@ export function uiBasic(options = {}) {
     install(dp) {
       dp.root.classList.add("rooz-ui-basic");
 
+      function setBtnContent(btn, content, fallbackText) {
+        btn.innerHTML = "";
+
+        if (!content) {
+          btn.textContent = fallbackText;
+          return;
+        }
+
+        if (typeof content === "string") {
+          btn.innerHTML = content;
+          return;
+        }
+
+        if (content instanceof Node) {
+          btn.appendChild(content);
+          return;
+        }
+
+        if (typeof content === "function") {
+          const out = content({ dp, btn });
+          if (typeof out === "string") btn.innerHTML = out;
+          else if (out instanceof Node) btn.appendChild(out);
+          else btn.textContent = fallbackText;
+          return;
+        }
+
+        btn.textContent = fallbackText;
+      }
+
       const header = el("div", { class: "rooz__header" });
-      const btnPrev = el("button", { class: "rooz__btn", type: "button" }, [
-        document.createTextNode("‹"),
-      ]);
-      const btnNext = el("button", { class: "rooz__btn", type: "button" }, [
-        document.createTextNode("›"),
-      ]);
+      const btnPrev = el("button", { class: "rooz__btn rooz__btn--nav", type: "button", "aria-label": "Previous month" });
+      const btnNext = el("button", { class: "rooz__btn rooz__btn--nav", type: "button", "aria-label": "Next month" });
+
+      setBtnContent(btnPrev, opt.navIcons?.prev, "‹");
+      setBtnContent(btnNext, opt.navIcons?.next, "›");
 
       const title = el("div", { class: "rooz__title" });
       const weekdays = el("div", { class: "rooz__weekdays" });
